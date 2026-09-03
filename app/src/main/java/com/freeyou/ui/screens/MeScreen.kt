@@ -49,15 +49,41 @@ fun MeScreen(
         contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
     ) {
         item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    com.freeyou.ui.components.FreeYouHeroBadge(sizeDp = 100.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "FreeYou",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "היצר הטוב שלך • Stop escaping. Start building.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.Cyan
+                    )
+                }
+            }
+        }
+
+        item {
             Text(
                 text = "אני והגדרות אישיות",
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
                 color = AppColors.TextPrimary
             )
             Text(
                 text = "הסיבות שלך, אבטחת המכשיר והיסטוריית הכתיבה",
-                fontSize = 14.sp,
+                fontSize = 13.5.sp,
                 color = AppColors.TextSecondary
             )
         }

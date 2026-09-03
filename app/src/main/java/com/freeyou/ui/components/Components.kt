@@ -2,6 +2,7 @@ package com.freeyou.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -101,6 +105,7 @@ fun UrgePulsingButton(
         ),
         label = "sosScale"
     )
+
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.25f,
         targetValue = 0.65f,
@@ -120,15 +125,20 @@ fun UrgePulsingButton(
         // Outer glowing aura
         Box(
             modifier = Modifier
-                .fillMaxWidth(scale)
+                .fillMaxWidth()
                 .height(68.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = glowAlpha
+                }
                 .clip(RoundedCornerShape(20.dp))
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            AppColors.Rose.copy(alpha = glowAlpha),
-                            AppColors.Amber.copy(alpha = glowAlpha * 0.8f),
-                            AppColors.Rose.copy(alpha = glowAlpha)
+                            AppColors.Rose,
+                            AppColors.Amber,
+                            AppColors.Rose
                         )
                     )
                 )
@@ -557,23 +567,149 @@ fun AudioWaveformVisual(
         label = "w4"
     )
 
-    Row(
+    Canvas(
         modifier = modifier
             .height(70.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxWidth()
     ) {
         val bars = if (isListening) listOf(wave1, wave2, wave4, wave3, wave2, wave1, wave3) else listOf(12f, 16f, 18f, 22f, 18f, 16f, 12f)
+        val barWidth = 4.dp.toPx()
+        val spacing = 6.dp.toPx()
+        val totalWidth = (bars.size * barWidth) + ((bars.size - 1) * spacing)
+        var startX = (size.width - totalWidth) / 2f
+        val color = if (isListening) AppColors.Amber else AppColors.Violet
+        
         bars.forEach { h ->
+            val hPx = h.dp.toPx()
+            val startY = (size.height - hPx) / 2f
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(startX, startY),
+                size = androidx.compose.ui.geometry.Size(barWidth, hPx),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
+            )
+            startX += barWidth + spacing
+        }
+    }
+}
+
+@Composable
+fun FreeYouBrandHeader(
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable (() -> Unit)? = null
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
-                    .width(4.dp)
-                    .height(h.dp)
-                    .clip(CircleShape)
-                    .background(if (isListening) AppColors.Amber else AppColors.Violet)
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AppColors.CardElevated)
+                    .border(
+                        1.5.dp,
+                        Brush.linearGradient(listOf(AppColors.Cyan, AppColors.VioletSoft, AppColors.Emerald)),
+                        RoundedCornerShape(16.dp)
+                    )
+            ) {
+                Image(
+                    painter = painterResource(id = com.freeyou.R.drawable.freeyou_logo),
+                    contentDescription = "FreeYou Logo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = "FreeYou",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    AppColors.Violet.copy(alpha = 0.25f),
+                                    AppColors.Cyan.copy(alpha = 0.2f)
+                                )
+                            )
+                        )
+                        .border(0.5.dp, AppColors.Cyan.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "היצר הטוב שלך",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.Cyan
+                    )
+                }
+            }
+        }
+        trailingContent?.invoke()
+    }
+}
+
+@Composable
+fun FreeYouHeroBadge(
+    modifier: Modifier = Modifier,
+    sizeDp: Dp = 110.dp
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "logo_glow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.75f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowAlpha"
+    )
+
+    Box(
+        modifier = modifier.size(sizeDp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        AppColors.Cyan.copy(alpha = glowAlpha * 0.45f),
+                        AppColors.Violet.copy(alpha = glowAlpha * 0.25f),
+                        Color.Transparent
+                    ),
+                    radius = size.width * 0.65f
+                )
             )
-            Spacer(modifier = Modifier.width(6.dp))
+        }
+        Box(
+            modifier = Modifier
+                .size(sizeDp * 0.88f)
+                .clip(RoundedCornerShape(24.dp))
+                .background(AppColors.CardElevated)
+                .border(
+                    2.dp,
+                    Brush.linearGradient(listOf(AppColors.Cyan, AppColors.Emerald, AppColors.VioletSoft)),
+                    RoundedCornerShape(24.dp)
+                )
+        ) {
+            Image(
+                painter = painterResource(id = com.freeyou.R.drawable.freeyou_logo),
+                contentDescription = "FreeYou Badge",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         }
     }
 }

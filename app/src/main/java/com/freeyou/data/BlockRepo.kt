@@ -225,17 +225,28 @@ object BlockRepo {
     }
 
     fun isUrlBlocked(url: String): String? {
-        val host = url.removePrefix("https://").removePrefix("http://")
+        val trimmed = url.trim()
+        if (trimmed.isEmpty()) return null
+
+        val host = trimmed.removePrefix("https://").removePrefix("http://")
             .substringBefore('/').substringBefore(':').removePrefix("www.").lowercase()
-        if (host.isEmpty()) return null
 
         val current = _state.value
+
+        // 1. Check user custom blocked domains / keywords
         current.blocked.forEach { m ->
             val n = m.lowercase().trim()
-            if (n.isNotEmpty() && host.contains(n)) return host
+            if (n.isNotEmpty()) {
+                if (host.contains(n) || trimmed.lowercase().contains(n)) return n
+            }
         }
 
+        // 2. Check 18+ adult content engine (preloaded offline DB + pattern analyzer)
         if (current.autoAdult) {
+            val adultHit = AdultBlockEngine.isUrlOrHostBlocked(trimmed)
+            if (adultHit != null) return adultHit
+
+            // Check dynamically downloaded hosts file if available
             loadAuto()
             if (autoSet.contains(host)) return host
             var h = host
@@ -245,6 +256,11 @@ object BlockRepo {
             }
         }
         return null
+    }
+
+    fun checkContentTrigger(text: CharSequence?): String? {
+        if (!_state.value.autoAdult) return null
+        return AdultBlockEngine.checkScreenText(text)
     }
 
     fun isAppBlocked(pkg: String, screenHint: String?): String? {

@@ -1,48 +1,18 @@
-package com.freeyou.ui.screens
+import re
 
-import android.content.Intent
-import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.freeyou.data.BlockRepo
+with open("app/src/main/java/com/freeyou/ui/screens/MentorScreen.kt", "r") as f:
+    code = f.read()
 
+# Update imports
+new_imports = """
 import com.freeyou.ai.MentorManager
 import com.freeyou.ai.ChatMessage
+"""
+code = code.replace("import com.freeyou.data.MentorLines", new_imports)
 
-import com.freeyou.ui.components.AudioWaveformVisual
-import com.freeyou.ui.theme.AppColors
-import java.util.Locale
-
-
-
-@Composable
-fun MentorScreen(
-    onNavigate: (String) -> Unit
-) {
-    
+# The entire MentorScreen body will be rebuilt to use MentorManager. 
+# We'll replace everything after @Composable fun MentorScreen(
+new_body = """
     val context = LocalContext.current
     val state by BlockRepo.state.collectAsState()
     
@@ -266,73 +236,16 @@ fun MentorScreen(
         }
     }
 }
-@Composable
-private fun ChatBubble(msg: ChatMessage, mode: String) {
-    val align = if (msg.isMentor) Alignment.Start else Alignment.End
-    val bg = if (msg.isMentor) {
-        when (mode) {
-            "warrior" -> AppColors.CardSurface.copy(alpha = 0.95f)
-            "compassion" -> AppColors.CardSurface.copy(alpha = 0.95f)
-            else -> AppColors.CardSurface.copy(alpha = 0.95f)
-        }
-    } else {
-        AppColors.Violet.copy(alpha = 0.35f)
-    }
+"""
 
-    val border = if (msg.isMentor) {
-        when (mode) {
-            "warrior" -> AppColors.Amber.copy(alpha = 0.3f)
-            "compassion" -> AppColors.Cyan.copy(alpha = 0.3f)
-            else -> AppColors.Violet.copy(alpha = 0.3f)
-        }
-    } else {
-        AppColors.Violet.copy(alpha = 0.6f)
-    }
+start_index = code.find("val context = LocalContext.current")
+end_index = code.find("@Composable\nprivate fun ChatBubble")
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = align
-    ) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 290.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 18.dp,
-                        topEnd = 18.dp,
-                        bottomStart = if (msg.isMentor) 4.dp else 18.dp,
-                        bottomEnd = if (msg.isMentor) 18.dp else 4.dp
-                    )
-                )
-                .background(bg)
-                .border(1.dp, border, RoundedCornerShape(18.dp))
-                .padding(14.dp)
-        ) {
-            Text(
-                text = msg.text,
-                color = AppColors.TextPrimary,
-                fontSize = 14.5.sp,
-                lineHeight = 21.sp
-            )
-        }
-    }
-}
+final_code = code[:start_index] + new_body + code[end_index:]
 
-@Composable
-private fun SuggestionChip(label: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(AppColors.CardSurface)
-            .border(1.dp, AppColors.BorderGlass, RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = label,
-            color = AppColors.TextSecondary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
+# Fix ChatBubble ChatMsg parameter
+final_code = final_code.replace("private fun ChatBubble(msg: ChatMsg", "private fun ChatBubble(msg: ChatMessage")
+final_code = final_code.replace("data class ChatMsg(val isMentor: Boolean, val text: String)", "")
+
+with open("app/src/main/java/com/freeyou/ui/screens/MentorScreen.kt", "w") as f:
+    f.write(final_code)

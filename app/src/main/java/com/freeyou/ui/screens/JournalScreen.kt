@@ -14,14 +14,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.freeyou.data.BlockRepo
+import com.freeyou.data.DataRepository
+import com.freeyou.data.model.JournalEntry
 import com.freeyou.ui.components.GlassCard
 import com.freeyou.ui.theme.AppColors
+import kotlinx.coroutines.launch
 
 @Composable
 fun JournalScreen(
     onNavigate: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var text by remember { mutableStateOf("יומנו של גבר:\n") }
     val minChars = 180
     val currentLength = text.trim().length
@@ -123,8 +129,16 @@ fun JournalScreen(
                 Button(
                     onClick = {
                         if (isValid) {
-                            BlockRepo.addJournal(text)
-                            onNavigate("home")
+                            coroutineScope.launch {
+                                DataRepository.getInstance(context).insertJournalEntry(
+                                    JournalEntry(
+                                        notes = text,
+                                        intensity = 5 // default for now, could be dynamic
+                                    )
+                                )
+                                BlockRepo.recordUrgeOvercome() // Kept for legacy streak tracking
+                                onNavigate("home")
+                            }
                         }
                     },
                     enabled = isValid,

@@ -31,6 +31,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import android.net.VpnService
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.freeyou.vpn.ShieldVpnService
+
+
 @Composable
 fun ShieldScreen(
     onNavigate: (String) -> Unit
@@ -55,6 +61,38 @@ fun ShieldScreen(
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: ""
         return enabledServices.contains("com.freeyou")
+    }
+
+
+    var isVpnActive by remember { mutableStateOf(false) }
+    
+    val vpnLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val intent = Intent(context, ShieldVpnService::class.java)
+            context.startService(intent)
+            isVpnActive = true
+        }
+    }
+    
+    fun toggleVpn() {
+        if (isVpnActive) {
+            val intent = Intent(context, ShieldVpnService::class.java).apply {
+                action = "STOP"
+            }
+            context.startService(intent)
+            isVpnActive = false
+        } else {
+            val vpnIntent = VpnService.prepare(context)
+            if (vpnIntent != null) {
+                vpnLauncher.launch(vpnIntent)
+            } else {
+                val intent = Intent(context, ShieldVpnService::class.java)
+                context.startService(intent)
+                isVpnActive = true
+            }
+        }
     }
 
     var hasAccessibility by remember { mutableStateOf(checkAccessibility()) }
@@ -91,6 +129,44 @@ fun ShieldScreen(
                 fontSize = 13.5.sp,
                 color = AppColors.TextSecondary
             )
+        }
+
+        
+        // VPN / DNS Filter Banner
+        item {
+            GlassCard(
+                borderColor = if (isVpnActive) AppColors.Lime.copy(alpha = 0.5f) else AppColors.Cyan.copy(alpha = 0.3f)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "מנוע סינון DNS עמוק (VPN)",
+                            color = AppColors.TextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "חסימת אתרי מבוגרים ברמת הרשת (DNS Interception) ללא השפעה על המהירות.",
+                            color = AppColors.TextTertiary,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
+                    Switch(
+                        checked = isVpnActive,
+                        onCheckedChange = { toggleVpn() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = AppColors.Lime,
+                            checkedTrackColor = AppColors.Lime.copy(alpha = 0.3f)
+                        )
+                    )
+                }
+            }
         }
 
         // Permissions banner
@@ -184,23 +260,25 @@ fun ShieldScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "חסימת תכני מבוגרים (Block 18+)",
+                            text = "חסימת תכני מבוגרים ודחפים (Block 18+)",
                             color = AppColors.TextPrimary,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "רשימת ענק מקומית של מעל 120,000 דומיינים למבוגרים",
-                            color = AppColors.TextTertiary,
-                            fontSize = 12.sp
+                            text = "חסימה מוחלטת של Pornhub, Xvideos, OnlyFans, אתרי סקס, וסריקת טריגרים ברשתות (X, TikTok)",
+                            color = AppColors.Cyan,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                     Switch(
                         checked = state.autoAdult,
                         onCheckedChange = { BlockRepo.setAutoAdult(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = AppColors.Violet,
-                            checkedTrackColor = AppColors.Violet.copy(alpha = 0.4f)
+                            checkedThumbColor = AppColors.Cyan,
+                            checkedTrackColor = AppColors.Cyan.copy(alpha = 0.4f)
                         )
                     )
                 }

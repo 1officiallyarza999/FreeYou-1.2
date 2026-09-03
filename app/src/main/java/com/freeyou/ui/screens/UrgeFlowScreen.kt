@@ -120,17 +120,8 @@ fun UrgeFlowScreen(
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Spacer(modifier = Modifier.height(30.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(90.dp)
-                                .clip(CircleShape)
-                                .background(AppColors.Cyan.copy(alpha = 0.15f))
-                                .border(1.5.dp, AppColors.Cyan.copy(alpha = 0.4f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = "🛑", fontSize = 42.sp)
-                        }
+                        Spacer(modifier = Modifier.height(20.dp))
+                        com.freeyou.ui.components.FreeYouHeroBadge(sizeDp = 110.dp)
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             text = "ההרגל הישן נעצר כאן.",

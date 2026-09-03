@@ -64,63 +64,63 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(top = 8.dp, bottom = 110.dp)
     ) {
-        // Greeting & Brand Header
+        // FreeYou Brand Header & Shield Status
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = greeting,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Black,
-                        color = AppColors.TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Stop escaping. Start building.",
-                        fontSize = 12.sp,
-                        color = AppColors.Cyan,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 1.sp
-                    )
-                }
-
-                // Shield Status Pill
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (state.autoAdult) AppColors.Lime.copy(alpha = 0.12f)
-                            else AppColors.Rose.copy(alpha = 0.12f)
-                        )
-                        .border(
-                            1.dp,
-                            if (state.autoAdult) AppColors.Lime.copy(alpha = 0.4f)
-                            else AppColors.Rose.copy(alpha = 0.4f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .clickable { onNavigate("shield") }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(if (state.autoAdult) AppColors.Lime else AppColors.Rose)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (state.autoAdult) "חומת מגן פעילה" else "מגן כבוי",
-                            color = if (state.autoAdult) AppColors.Lime else AppColors.Rose,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+            FreeYouBrandHeader(
+                trailingContent = {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (state.autoAdult) AppColors.Lime.copy(alpha = 0.12f)
+                                else AppColors.Rose.copy(alpha = 0.12f)
+                            )
+                            .border(
+                                1.dp,
+                                if (state.autoAdult) AppColors.Lime.copy(alpha = 0.4f)
+                                else AppColors.Rose.copy(alpha = 0.4f),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onNavigate("shield") }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(if (state.autoAdult) AppColors.Lime else AppColors.Rose)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (state.autoAdult) "חומת מגן פעילה" else "מגן כבוי",
+                                color = if (state.autoAdult) AppColors.Lime else AppColors.Rose,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
+            )
+        }
+
+        // Greeting & Motivational Motto
+        item {
+            Column {
+                Text(
+                    text = greeting,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    color = AppColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Stop escaping. Start building.",
+                    fontSize = 12.sp,
+                    color = AppColors.Cyan,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.8.sp
+                )
             }
         }
 

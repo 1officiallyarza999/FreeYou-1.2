@@ -4,14 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,18 +20,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
+import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import com.freeyou.data.BlockRepo
 import com.freeyou.ui.components.MeshBackground
 import com.freeyou.ui.components.TopBarHeader
 import com.freeyou.ui.screens.*
 import com.freeyou.ui.theme.AppColors
 import com.freeyou.ui.theme.FreeYouTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private var currentRoute = mutableStateOf("home")
-    private var routeTarget = mutableStateOf("")
-    private var routeCount = mutableStateOf(1)
+    private val _navEvents = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val navEvents = _navEvents.asSharedFlow()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +49,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             FreeYouTheme {
                 val state by BlockRepo.state.collectAsState()
-                var activeTab by remember { mutableStateOf("home") }
-                val route by currentRoute
-                val target by routeTarget
-                val count by routeCount
+                val navController = rememberNavController()
+                val coroutineScope = rememberCoroutineScope()
+                
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = currentBackStackEntry?.destination?.route?.substringBefore("?") ?: "home"
+
+                LaunchedEffect(Unit) {
+                    navEvents.collect { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                        }
+                    }
+                }
 
                 fun isAccessibilityActive(): Boolean {
                     val enabled = Settings.Secure.getString(
@@ -59,22 +71,6 @@ class MainActivity : ComponentActivity() {
                     return enabled.contains("com.freeyou")
                 }
 
-                fun navigateTo(destination: String) {
-                    when (destination) {
-                        "home", "shield", "mentor", "grow", "me" -> {
-                            activeTab = destination
-                            currentRoute.value = destination
-                        }
-                        else -> {
-                            currentRoute.value = destination
-                        }
-                    }
-                }
-
-                BackHandler(enabled = route !in listOf("home", "shield", "mentor", "grow", "me")) {
-                    currentRoute.value = activeTab
-                }
-
                 MeshBackground {
                     Scaffold(
                         modifier = Modifier
@@ -82,21 +78,26 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.statusBars),
                         containerColor = Color.Transparent,
                         topBar = {
-                            if (route in listOf("home", "shield", "mentor", "grow", "me")) {
+                            if (currentRoute in listOf("home", "shield", "mentor", "grow", "me")) {
                                 TopBarHeader(
                                     isStrict = state.strict,
                                     isShieldActive = isAccessibilityActive(),
-                                    onVoiceClick = { navigateTo("mentor") }
+                                    onVoiceClick = { navController.navigate("mentor") }
                                 )
                             }
                         },
                         bottomBar = {
-                            if (route in listOf("home", "shield", "mentor", "grow", "me")) {
+                            if (currentRoute in listOf("home", "shield", "mentor", "grow", "me")) {
                                 BottomGlassBar(
-                                    activeTab = activeTab,
+                                    activeTab = currentRoute,
                                     onSelectTab = { tab ->
-                                        activeTab = tab
-                                        currentRoute.value = tab
+                                        navController.navigate(tab) {
+                                            popUpTo(navController.graph.startDestinationId) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 )
                             }
@@ -107,24 +108,46 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         ) {
-                            when (route) {
-                                "home" -> HomeScreen(onNavigate = { navigateTo(it) })
-                                "shield" -> ShieldScreen(onNavigate = { navigateTo(it) })
-                                "mentor" -> MentorScreen(onNavigate = { navigateTo(it) })
-                                "grow" -> GrowScreen(onNavigate = { navigateTo(it) })
-                                "me" -> MeScreen(onNavigate = { navigateTo(it) })
-                                "intercept" -> InterceptScreen(
-                                    target = target,
-                                    count = count,
-                                    onNavigate = { navigateTo(it) }
-                                )
-                                "journal" -> JournalScreen(onNavigate = { navigateTo(it) })
-                                "mission" -> MissionScreen(onNavigate = { navigateTo(it) })
-                                "sos" -> SosScreen(onNavigate = { navigateTo(it) })
-                                "unlock" -> UnlockScreen(onNavigate = { navigateTo(it) })
-                                "urge_flow" -> UrgeFlowScreen(onNavigate = { navigateTo(it) })
-                                "progress" -> ProgressScreen(onNavigate = { navigateTo(it) })
-                                else -> HomeScreen(onNavigate = { navigateTo(it) })
+                            NavHost(navController = navController, startDestination = "home") {
+                                val navigateAction: (String) -> Unit = { route ->
+                                    if (route == "back") {
+                                        navController.popBackStack()
+                                    } else {
+                                        navController.navigate(route) {
+                                            if (route in listOf("home", "shield", "mentor", "grow", "me")) {
+                                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            } else {
+                                                launchSingleTop = true
+                                            }
+                                        }
+                                    }
+                                }
+                                composable("home") { HomeScreen(onNavigate = navigateAction) }
+                                composable("shield") { ShieldScreen(onNavigate = navigateAction) }
+                                composable("mentor") { MentorScreen(onNavigate = navigateAction) }
+                                composable("grow") { GrowScreen(onNavigate = navigateAction) }
+                                composable("me") { MeScreen(onNavigate = navigateAction) }
+                                
+                                composable(
+                                    route = "intercept?target={target}&count={count}",
+                                    arguments = listOf(
+                                        navArgument("target") { type = NavType.StringType; defaultValue = "" },
+                                        navArgument("count") { type = NavType.IntType; defaultValue = 1 }
+                                    )
+                                ) { backStackEntry ->
+                                    val target = backStackEntry.arguments?.getString("target") ?: ""
+                                    val count = backStackEntry.arguments?.getInt("count") ?: 1
+                                    InterceptScreen(target = target, count = count, onNavigate = navigateAction)
+                                }
+                                
+                                composable("journal") { JournalScreen(onNavigate = navigateAction) }
+                                composable("mission") { MissionScreen(onNavigate = navigateAction) }
+                                composable("sos") { SosScreen(onNavigate = navigateAction) }
+                                composable("unlock") { UnlockScreen(onNavigate = navigateAction) }
+                                composable("urge_flow") { UrgeFlowScreen(onNavigate = navigateAction) }
+                                composable("progress") { ProgressScreen(onNavigate = navigateAction) }
                             }
                         }
                     }
@@ -144,17 +167,15 @@ class MainActivity : ComponentActivity() {
         val c = intent?.getIntExtra("freeyou_count", 1) ?: 1
 
         if (!r.isNullOrBlank()) {
-            currentRoute.value = r
-            routeTarget.value = t
-            routeCount.value = c
+            val route = if (r == "intercept") "intercept?target=$t&count=$c" else r
+            _navEvents.tryEmit(route)
             return
         }
 
         val pending = BlockRepo.pendingRoute()
         if (pending != null) {
-            currentRoute.value = pending.first
-            routeTarget.value = pending.second
-            routeCount.value = pending.third
+            val pendingRoute = if (pending.first == "intercept") "intercept?target=${pending.second}&count=${pending.third}" else pending.first
+            _navEvents.tryEmit(pendingRoute)
             BlockRepo.clearPendingRoute()
         }
     }
@@ -199,10 +220,7 @@ private fun BottomGlassBar(
                         .clickable { onSelectTab(tabKey) }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text(
-                        text = icon,
-                        fontSize = 18.sp
-                    )
+                    Text(text = icon, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = label,

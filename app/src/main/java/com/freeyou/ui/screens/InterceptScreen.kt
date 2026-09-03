@@ -96,34 +96,34 @@ fun InterceptScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Glowing breathing orb
+            // FreeYou Hero Badge with glowing breathing halo
             Box(
-                modifier = Modifier
-                    .size(180.dp),
+                modifier = Modifier.size(190.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                AppColors.Amber.copy(alpha = 0.7f),
-                                AppColors.Rose.copy(alpha = 0.35f),
+                                AppColors.Cyan.copy(alpha = 0.5f),
+                                AppColors.Violet.copy(alpha = 0.35f),
+                                AppColors.Rose.copy(alpha = 0.15f),
                                 Color.Transparent
                             ),
-                            radius = size.width * 0.5f * scale
+                            radius = size.width * 0.52f * scale
                         )
                     )
                 }
-                Text(text = "🛑", fontSize = 48.sp)
+                com.freeyou.ui.components.FreeYouHeroBadge(sizeDp = 130.dp)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = if (count <= 1) "רגע העצירה" else "ניסיון שני היום",
+                text = if (count <= 1) "ההרגל הישן נעצר כאן" else "ניסיון שני היום • עצור ונשום",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
-                color = AppColors.TextPrimary
+                color = Color.White
             )
 
             Spacer(modifier = Modifier.height(6.dp))
