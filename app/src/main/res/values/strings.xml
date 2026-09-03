@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FreeYou</string>
+    <string name="accessibility_desc">FreeYou זקוק להרשאה זו כדי לזהות כניסה לאתר או לאפליקציה שאתה עצמך חסמת, ולעצור אותה לפני שהתוכן נטען. הבדיקה מתבצעת כולה על המכשיר — שום כתובת אתר לא נשלחת לשום מקום.</string>
+</resources>

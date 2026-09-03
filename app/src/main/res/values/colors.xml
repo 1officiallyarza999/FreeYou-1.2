@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#050507</color>
+    <color name="surface">#0D0D12</color>
+    <color name="primary">#7C3AED</color>
+    <color name="accent_amber">#FFB020</color>
+    <color name="accent_rose">#FB2E6B</color>
+    <color name="accent_cyan">#22D3EE</color>
+    <color name="accent_lime">#A3E635</color>
+</resources>
