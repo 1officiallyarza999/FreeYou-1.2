@@ -15,23 +15,17 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # app/build.gradle.kts מצפה ל-debug.keystore בשורש הפרויקט.
-      # הקובץ ב-.gitignore ולכן לא קיים בענן — מייצרים אותו כאן.
-      - name: Create debug keystore
+      - name: Generate Debug Keystore
         run: |
-          keytool -genkeypair -v \
-            -keystore debug.keystore \
-            -storepass android -keypass android \
-            -alias androiddebugkey \
-            -keyalg RSA -keysize 2048 -validity 10000 \
+          keytool -genkey -v -keystore debug.keystore -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias androiddebugkey -keypass android -storepass android \
             -dname "CN=Android Debug,O=Android,C=US"
-          ls -la debug.keystore
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
