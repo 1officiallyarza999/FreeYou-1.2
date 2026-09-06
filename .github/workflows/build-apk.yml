@@ -1,28 +1,78 @@
-name: Build APK
+name: Build FreeYou 1.6.1 APK
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'temurin'
+          distribution: temurin
           cache: gradle
 
-      - name: Grant execute permission for gradlew
+      - name: Apply FreeYou 1.6.1 stability patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATCH_ZIP="FreeYou-1.6.1-Adult-Shield-2.0-Stability.zip"
+          PATCH_ROOT="$RUNNER_TEMP/freeyou_patch"
+
+          if [ ! -f "$PATCH_ZIP" ]; then
+            echo "ERROR: $PATCH_ZIP was not found in repository root."
+            exit 1
+          fi
+
+          rm -rf "$PATCH_ROOT"
+          mkdir -p "$PATCH_ROOT"
+          unzip -q -o "$PATCH_ZIP" -d "$PATCH_ROOT"
+
+          PATCH_APP="$PATCH_ROOT/FreeYou-1.6.1-Adult-Shield-2.0-Stability/app"
+          if [ ! -d "$PATCH_APP" ]; then
+            echo "ERROR: app directory was not found inside the patch."
+            exit 1
+          fi
+
+          cp -a "$PATCH_APP/." app/
+
+          echo "Patch applied. Verifying critical files..."
+          grep -Fq 'versionName = "1.6.1"' app/build.gradle.kts
+          grep -Fiq 'onlyjerk' app/src/main/java/com/freeyou/data/AdultBlockEngine.kt
+          grep -Fq 'ShieldVpnService' app/src/main/AndroidManifest.xml
+          grep -Fq 'BlockInterventionCoordinator' app/src/main/java/com/freeyou/BlockerAccessibilityService.kt
+          grep -Fq 'addDisallowedApplication(packageName)' app/src/main/java/com/freeyou/vpn/ShieldVpnService.kt
+
+          echo "FreeYou 1.6.1 verification passed."
+
+      - name: Grant execute permission for Gradle
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew clean :app:assembleDebug --stacktrace --warning-mode all
 
-      - name: Upload APK
+      - name: Verify APK exists
+        run: |
+          set -euo pipefail
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload FreeYou 1.6.1 APK
         uses: actions/upload-artifact@v4
         with:
-          name: FreeYou-APK
+          name: FreeYou-1.6.1-Adult-Shield-2.0
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
